@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Crownstone: Kingdom Defender - 16-bit Browser RPG</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=VT323&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="game-container">
+    <!-- Game Canvas Viewport -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Top Medieval Resource Bar (Matching Image 4) -->
+    <header id="top-resource-bar" class="wood-panel">
+      <div class="resource-group">
+        <div class="res-item" title="Kingdom Gold">
+          <span class="res-icon">🪙</span>
+          <span id="res-gold" class="res-val">1250</span>
+        </div>
+        <div class="res-item" title="Timber Wood">
+          <span class="res-icon">🪵</span>
+          <span id="res-wood" class="res-val">340</span>
+        </div>
+        <div class="res-item" title="Quarried Stone">
+          <span class="res-icon">🪨</span>
+          <span id="res-stone" class="res-val">120</span>
+        </div>
+        <div class="res-item" title="Food Rations">
+          <span class="res-icon">🥕</span>
+          <span id="res-food" class="res-val">85</span>
+        </div>
+        <div class="res-item" title="Kingdom Population">
+          <span class="res-icon">👥</span>
+          <span id="res-pop" class="res-val">45/60</span>
+        </div>
+      </div>
+
+      <div class="calendar-widget wood-subpanel" id="calendar-widget">
+        <span class="calendar-icon">📅</span>
+        <span id="calendar-text">Day 15, Spring</span>
+        <span id="time-badge" class="badge-day">☀️ Day</span>
+      </div>
+    </header>
+
+    <!-- Top Left: Current Quest Tracker (Matching Image 4) -->
+    <aside id="quest-tracker" class="wood-panel">
+      <div class="panel-header">
+        <span class="badge-alert">!</span>
+        <span class="panel-title">Current Quest:</span>
+      </div>
+      <div class="quest-content">
+        <div class="quest-check-box" id="quest-check"></div>
+        <div class="quest-desc" id="quest-desc">Expand the Tavern (0/1)</div>
+      </div>
+    </aside>
+
+    <!-- Top Right: Objectives Bar (Matching Image 4) -->
+    <aside id="objectives-tracker" class="wood-panel">
+      <div class="objective-item">
+        <div class="obj-header">
+          <span>⚔️ Construct Barracks</span>
+          <span id="obj-tower-pct">80%</span>
+        </div>
+        <div class="obj-bar"><div class="obj-fill" id="obj-tower-bar" style="width: 80%;"></div></div>
+      </div>
+      <div class="objective-item">
+        <div class="obj-header">
+          <span>🛡️ Train Militia</span>
+          <span id="obj-militia-text">2/5</span>
+        </div>
+        <div class="obj-bar"><div class="obj-fill" id="obj-militia-bar" style="width: 40%;"></div></div>
+      </div>
+      <div class="objective-item">
+        <div class="obj-header">
+          <span>🪵 Gather Wood</span>
+          <span id="obj-wood-text">340/500</span>
+        </div>
+        <div class="obj-bar"><div class="obj-fill" id="obj-wood-bar" style="width: 68%;"></div></div>
+      </div>
+    </aside>
+
+    <!-- Night Raid Alert Banner -->
+    <div id="raid-alert" class="raid-alert-banner hidden">
+      <div class="raid-alert-icon">⚠️</div>
+      <div class="raid-alert-text">
+        <div class="raid-title">BANDIT RAID INCOMING!</div>
+        <div class="raid-subtitle">Defend the kingdom center from the nocturnal invaders!</div>
+      </div>
+    </div>
+
+    <!-- Dawn Victory Banner -->
+    <div id="dawn-alert" class="dawn-alert-banner hidden">
+      <div class="dawn-alert-icon">☀️</div>
+      <div class="dawn-alert-text">
+        <div class="dawn-title">DAWN HAS BROKEN!</div>
+        <div class="dawn-subtitle">The kingdom survived the night. Spoils recovered: +150 🪙, +40 🪵</div>
+      </div>
+    </div>
+
+    <!-- Player Quick Action Tooltip -->
+    <div id="action-tooltip" class="action-tooltip hidden">
+      <span id="action-prompt">Left-Click to Chop Timber</span>
+    </div>
+
+    <!-- Bottom Left Controls Helper -->
+    <div id="controls-hint" class="wood-subpanel">
+      <span><b>WASD / Arrows:</b> Move Hero</span>
+      <span><b>Left Click:</b> Chop / Attack / Place</span>
+      <span><b>B:</b> Build | <b>Q:</b> Quests | <b>V:</b> Villagers | <b>Space:</b> Swing</span>
+    </div>
+
+    <!-- Bottom Right Minimap (Matching Image 4) -->
+    <div id="minimap-container" class="wood-panel">
+      <div class="minimap-header">
+        <span>🗺️ Kingdom Map</span>
+      </div>
+      <canvas id="minimap-canvas" width="160" height="160"></canvas>
+    </div>
+
+    <!-- Bottom Action Bar (Matching Image 4: 6 Wooden Buttons) -->
+    <nav id="bottom-action-bar" class="wood-panel">
+      <button class="action-btn" id="btn-build" title="Build Structures (B)">
+        <span class="btn-icon">🔨</span>
+        <span class="btn-label">Build</span>
+      </button>
+      <button class="action-btn" id="btn-villagers" title="Manage Villagers (V)">
+        <span class="btn-icon">🧑‍🌾</span>
+        <span class="btn-label">Villagers</span>
+        <span class="btn-badge" id="badge-unassigned">0</span>
+      </button>
+      <button class="action-btn" id="btn-quests" title="Quest Log (Q)">
+        <span class="btn-icon">📜</span>
+        <span class="btn-label">Quests</span>
+        <span class="btn-badge-alert">!</span>
+      </button>
+      <button class="action-btn" id="btn-trade" title="Marketplace Trade">
+        <span class="btn-icon">⚖️</span>
+        <span class="btn-label">Trade</span>
+      </button>
+      <button class="action-btn" id="btn-settings" title="Audio & Settings">
+        <span class="btn-icon">⚙️</span>
+        <span class="btn-label">Settings</span>
+      </button>
+      <button class="action-btn" id="btn-world-map" title="Kingdom Overview">
+        <span class="btn-icon">🏰</span>
+        <span class="btn-label">World Map</span>
+      </button>
+    </nav>
+
+    <!-- Modals & Drawers -->
+
+    <!-- Build Palette Drawer -->
+    <div id="modal-build" class="game-modal hidden">
+      <div class="modal-box wood-panel">
+        <div class="modal-header">
+          <h2>🔨 Kingdom Construction</h2>
+          <button class="modal-close-btn" id="close-build-btn">✕</button>
+        </div>
+        <p class="modal-subtitle">Select a structure and left-click on the ground to place.</p>
+        <div class="building-grid">
+          <div class="build-card" data-building="wall">
+            <div class="card-icon">🧱</div>
+            <div class="card-info">
+              <h3>Palisade Wall</h3>
+              <p>Blocks nocturnal raiders.</p>
+              <div class="card-cost">🪵 15 Wood</div>
+            </div>
+          </div>
+          <div class="build-card" data-building="watchtower">
+            <div class="card-icon">🏹</div>
+            <div class="card-info">
+              <h3>Watchtower</h3>
+              <p>Stations an archer to shoot bandits.</p>
+              <div class="card-cost">🪵 40 Wood, 🪨 15 Stone</div>
+            </div>
+          </div>
+          <div class="build-card" data-building="blacksmith">
+            <div class="card-icon">⚒️</div>
+            <div class="card-info">
+              <h3>Blacksmith Forge</h3>
+              <p>Cutaway forge; upgrades militia weapons.</p>
+              <div class="card-cost">🪵 50 Wood, 🪨 40 Stone</div>
+            </div>
+          </div>
+          <div class="build-card" data-building="tavern">
+            <div class="card-icon">🍺</div>
+            <div class="card-info">
+              <h3>Cutaway Tavern</h3>
+              <p>Attracts new villagers & mercenaries.</p>
+              <div class="card-cost">🪵 80 Wood, 🪙 100 Gold</div>
+            </div>
+          </div>
+          <div class="build-card" data-building="farm">
+            <div class="card-icon">🌾</div>
+            <div class="card-info">
+              <h3>Wheat & Carrot Farm</h3>
+              <p>Produces continuous food supply.</p>
+              <div class="card-cost">🪵 25 Wood, 🪙 20 Gold</div>
+            </div>
+          </div>
+          <div class="build-card" data-building="lumber_camp">
+            <div class="card-icon">🪓</div>
+            <div class="card-info">
+              <h3>Lumberjack Camp</h3>
+              <p>Lumberjacks automatically chop timber.</p>
+              <div class="card-cost">🪵 30 Wood, 🪙 30 Gold</div>
+            </div>
+          </div>
+          <div class="build-card" data-building="street_lamp">
+            <div class="card-icon">🏮</div>
+            <div class="card-info">
+              <h3>Hanging Lantern Post</h3>
+              <p>Illuminates the darkness during night raids.</p>
+              <div class="card-cost">🪵 10 Wood, 🪙 10 Gold</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Villagers Modal -->
+    <div id="modal-villagers" class="game-modal hidden">
+      <div class="modal-box wood-panel">
+        <div class="modal-header">
+          <h2>🧑‍🌾 Villager Roster & Roles</h2>
+          <button class="modal-close-btn" id="close-villagers-btn">✕</button>
+        </div>
+        <p class="modal-subtitle">Assign villagers to gather resources or defend the walls.</p>
+        <div class="villager-summary">
+          <span>Unassigned Villagers: <b id="val-unassigned">2</b></span>
+          <button id="btn-recruit" class="wood-btn-gold">+ Recruit Villager (🪙 50)</button>
+        </div>
+        <div class="role-grid">
+          <div class="role-card">
+            <div class="role-icon">🪓</div>
+            <div class="role-details">
+              <h4>Lumberjacks</h4>
+              <p>Chopping timber in surrounding forests (+2 wood/sec each)</p>
+            </div>
+            <div class="role-controls">
+              <button class="btn-role-sub" data-role="lumberjack">-</button>
+              <span id="role-lumberjack-count">3</span>
+              <button class="btn-role-add" data-role="lumberjack">+</button>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-icon">🌾</div>
+            <div class="role-details">
+              <h4>Farmers</h4>
+              <p>Harvesting wheat & carrots (+1 food/sec each)</p>
+            </div>
+            <div class="role-controls">
+              <button class="btn-role-sub" data-role="farmer">-</button>
+              <span id="role-farmer-count">2</span>
+              <button class="btn-role-add" data-role="farmer">+</button>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-icon">⚒️</div>
+            <div class="role-details">
+              <h4>Blacksmiths</h4>
+              <p>Crafting swords & reinforcing walls (+1 stone/sec each)</p>
+            </div>
+            <div class="role-controls">
+              <button class="btn-role-sub" data-role="blacksmith">-</button>
+              <span id="role-blacksmith-count">1</span>
+              <button class="btn-role-add" data-role="blacksmith">+</button>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-icon">🏹</div>
+            <div class="role-details">
+              <h4>Militia Archers</h4>
+              <p>Man towers and shoot incoming night raiders</p>
+            </div>
+            <div class="role-controls">
+              <button class="btn-role-sub" data-role="archer">-</button>
+              <span id="role-archer-count">2</span>
+              <button class="btn-role-add" data-role="archer">+</button>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-icon">⚔️</div>
+            <div class="role-details">
+              <h4>Militia Swordsmen</h4>
+              <p>Patrol perimeter and engage bandits in melee</p>
+            </div>
+            <div class="role-controls">
+              <button class="btn-role-sub" data-role="swordsman">-</button>
+              <span id="role-swordsman-count">2</span>
+              <button class="btn-role-add" data-role="swordsman">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quests Modal -->
+    <div id="modal-quests" class="game-modal hidden">
+      <div class="modal-box wood-panel">
+        <div class="modal-header">
+          <h2>📜 Kingdom Decrees & Quests</h2>
+          <button class="modal-close-btn" id="close-quests-btn">✕</button>
+        </div>
+        <div class="quest-list" id="quest-modal-list">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="modal-settings" class="game-modal hidden">
+      <div class="modal-box wood-panel">
+        <div class="modal-header">
+          <h2>⚙️ Kingdom Settings</h2>
+          <button class="modal-close-btn" id="close-settings-btn">✕</button>
+        </div>
+        <div class="settings-list">
+          <div class="setting-item">
+            <span>Audio Sound Effects:</span>
+            <button id="toggle-sfx" class="wood-btn-gold">🔊 Enabled</button>
+          </div>
+          <div class="setting-item">
+            <span>Retro 16-Bit Music:</span>
+            <button id="toggle-music" class="wood-btn-gold">🎵 Play Music</button>
+          </div>
+          <div class="setting-item">
+            <span>Pixel Camera Zoom:</span>
+            <div class="zoom-controls">
+              <button id="zoom-out" class="wood-btn-gold">-</button>
+              <span id="zoom-val">2.5×</span>
+              <button id="zoom-in" class="wood-btn-gold">+</button>
+            </div>
+          </div>
+          <div class="setting-item">
+            <span>Building Roof Cutaways:</span>
+            <button id="toggle-cutaway" class="wood-btn-gold">👁️ Always Cutaway</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

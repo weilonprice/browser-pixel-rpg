@@ -1,0 +1,19 @@
+{
+  "name": "crownstone-browser-pixel-rpg",
+  "version": "1.0.0",
+  "description": "16-Bit Kingdom Defender Browser RPG",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "pixel-art",
+    "browser-game",
+    "rpg",
+    "kingdom-builder"
+  ],
+  "author": "",
+  "license": "MIT"
+}
