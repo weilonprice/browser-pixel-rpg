@@ -134,6 +134,9 @@ export class Villager extends Entity {
   }
 
   render(ctx, art) {
+    if (art.drawPixellabAsset(ctx, 'npcs', this.role, this.x, this.y - 6, 32, true)) {
+      return;
+    }
     art.drawVillager(ctx, this.x, this.y, this.role, this.direction, this.animFrame);
   }
 }
