@@ -35,6 +35,11 @@ export class Animal extends Entity {
   }
 
   render(ctx, art) {
+    // 1. Try rendering genuine PixelLab animal sprite
+    if (art.drawPixellabAsset(ctx, 'animals', this.type, this.x, this.y - 4, this.type === 'chicken' ? 24 : 32, true)) {
+      return;
+    }
+
     const frame = this.animTimer % 1;
     if (this.type === 'cow') {
       art.drawCow(ctx, this.x, this.y, frame);
@@ -47,13 +52,20 @@ export class Animal extends Entity {
 }
 
 export class WorldProp extends Entity {
-  constructor(x, y, propType = 'scarecrow', variant = null) {
+  constructor(x, y, propType = 'barrel', variant = null, size = 32) {
     super(x, y, 24, 24);
     this.propType = propType;
     this.variant = variant;
+    this.size = size;
   }
 
   render(ctx, art) {
+    // 1. Try direct PixelLab asset rendering
+    if (art.drawPixellabAsset(ctx, 'props', this.propType, this.x, this.y - 6, this.size, true)) {
+      return;
+    }
+
+    // 2. Fallbacks
     switch (this.propType) {
       case 'scarecrow':
         art.drawScarecrow(ctx, this.x, this.y);
@@ -69,6 +81,21 @@ export class WorldProp extends Entity {
         break;
       case 'handcart':
         art.drawHandcart(ctx, this.x, this.y, this.variant || 'potatoes');
+        break;
+      case 'barrel':
+        ctx.fillStyle = '#8b5a2b';
+        ctx.fillRect(this.x - 7, this.y - 10, 14, 16);
+        ctx.fillStyle = '#4a2912';
+        ctx.fillRect(this.x - 7, this.y - 7, 14, 2);
+        ctx.fillRect(this.x - 7, this.y - 1, 14, 2);
+        break;
+      case 'crate':
+        ctx.fillStyle = '#b8860b';
+        ctx.fillRect(this.x - 8, this.y - 10, 16, 16);
+        ctx.fillStyle = '#5c4033';
+        ctx.strokeRect(this.x - 8, this.y - 10, 16, 16);
+        break;
+      default:
         break;
     }
   }

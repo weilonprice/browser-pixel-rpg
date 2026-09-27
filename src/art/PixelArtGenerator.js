@@ -4,6 +4,42 @@
 export class PixelArtGenerator {
   constructor() {
     this.cache = new Map();
+    this.pixellabAssets = new Map();
+
+    // Authentic PixelLab Generated 4-Directional Hero Sprites
+    this.heroSprites = {
+      down: new Image(),
+      up: new Image(),
+      left: new Image(),
+      right: new Image()
+    };
+    this.heroSprites.down.src = 'assets/images/hero/hero_south.png';
+    this.heroSprites.up.src = 'assets/images/hero/hero_north.png';
+    this.heroSprites.right.src = 'assets/images/hero/hero_east.png';
+    this.heroSprites.left.src = 'assets/images/hero/hero_west.png';
+  }
+
+  getPixellabImage(category, name) {
+    const key = `${category}/${name}`;
+    if (!this.pixellabAssets.has(key)) {
+      const img = new Image();
+      img.src = `assets/images/pixellab/${category}/${name}.png`;
+      this.pixellabAssets.set(key, img);
+    }
+    return this.pixellabAssets.get(key);
+  }
+
+  drawPixellabAsset(ctx, category, name, x, y, size = 32, centered = true) {
+    const img = this.getPixellabImage(category, name);
+    if (img && img.complete && img.naturalWidth > 0) {
+      if (centered) {
+        ctx.drawImage(img, Math.round(x - size / 2), Math.round(y - size / 2), size, size);
+      } else {
+        ctx.drawImage(img, Math.round(x), Math.round(y), size, size);
+      }
+      return true;
+    }
+    return false;
   }
 
   // Helper to create an offscreen pixel canvas
@@ -631,63 +667,88 @@ export class PixelArtGenerator {
     ctx.save();
     ctx.translate(Math.round(x), Math.round(y));
 
-    // Green reticle / selection ring under feet (Matching Image 4)
+    // Green reticle / selection ring under feet (Matching reference scene)
     ctx.strokeStyle = '#4cd964';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.ellipse(0, 8, 11, 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 8, 12, 5, 0, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Shadow
+    // Shadow under character
     ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
     ctx.beginPath();
     ctx.ellipse(0, 7, 9, 4, 0, 0, Math.PI * 2);
     ctx.fill();
 
     const bob = state === 'walk' ? (Math.sin(frame * Math.PI * 2) * 1.5) : (Math.sin(frame * Math.PI) * 0.5);
-
-    // Chibi proportions: Cute rounded head + expressive tunic
     const py = bob;
 
-    // Body / Tunic (Hero Vibrant Green #2e8b38)
-    ctx.fillStyle = '#161917'; // outline
-    ctx.fillRect(-7, -10 + py, 14, 15);
-    ctx.fillStyle = '#2e8b38'; // green tunic
-    ctx.fillRect(-6, -9 + py, 12, 13);
+    // Authentic PixelLab Generated 32x32 Hero Sprite
+    const img = this.heroSprites[dir] || this.heroSprites.down;
+    if (img && img.complete && img.naturalWidth > 0) {
+      // Draw PixelLab crisp sprite centered horizontally (-16), feet aligned to y + 6 (-26)
+      ctx.drawImage(img, -16, -26 + py, 32, 32);
 
-    // Leather belt & gold buckle
+      // Tool / Weapon swing animation
+      if (state === 'swing') {
+        ctx.save();
+        const swingDir = (dir === 'left') ? -1 : 1;
+        ctx.translate(swingDir * 8, -6 + py);
+        ctx.rotate(swingDir * ((frame * Math.PI) - Math.PI / 3));
+
+        // Handle
+        ctx.fillStyle = '#6d421e';
+        ctx.fillRect(0, -12, 3, 16);
+
+        if (tool === 'axe') {
+          // Steel Axe head
+          ctx.fillStyle = '#b8c2cc';
+          ctx.beginPath();
+          ctx.moveTo(3, -12);
+          ctx.lineTo(12, -16);
+          ctx.lineTo(10, -6);
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          // Sword blade
+          ctx.fillStyle = '#cfd7e0';
+          ctx.fillRect(-1, -20, 5, 14);
+          ctx.fillStyle = '#f1c40f'; // guard
+          ctx.fillRect(-3, -6, 9, 2);
+        }
+        ctx.restore();
+      }
+
+      ctx.restore();
+      return;
+    }
+
+    // Procedural Fallback while images are loading
+    ctx.fillStyle = '#161917';
+    ctx.fillRect(-7, -10 + py, 14, 15);
+    ctx.fillStyle = '#2e8b38';
+    ctx.fillRect(-6, -9 + py, 12, 13);
     ctx.fillStyle = '#5c3314';
     ctx.fillRect(-6, -2 + py, 12, 3);
     ctx.fillStyle = '#f1c40f';
     ctx.fillRect(-2, -2 + py, 4, 3);
-
-    // Boots
     ctx.fillStyle = '#42240e';
     ctx.fillRect(-5, 4, 4, 4);
     ctx.fillRect(1, 4, 4, 4);
-
-    // Head (Chibi round head)
-    ctx.fillStyle = '#1c1b18'; // head outline
+    ctx.fillStyle = '#1c1b18';
     ctx.beginPath();
     ctx.roundRect(-9, -24 + py, 18, 16, 5);
     ctx.fill();
-
-    // Skin
     ctx.fillStyle = '#fcd0a1';
     ctx.beginPath();
     ctx.roundRect(-8, -23 + py, 16, 14, 4);
     ctx.fill();
-
-    // Golden-Blonde Hair (Matching Reference Image)
     ctx.fillStyle = '#f5c542';
     ctx.beginPath();
     ctx.roundRect(-9, -25 + py, 18, 9, [5, 5, 0, 0]);
     ctx.fill();
-    // Hair bangs
     ctx.fillRect(-8, -17 + py, 4, 3);
     ctx.fillRect(4, -17 + py, 4, 3);
-
-    // Face / Eyes
     ctx.fillStyle = '#1c1712';
     if (dir === 'left') {
       ctx.fillRect(-6, -18 + py, 2, 3);
@@ -697,58 +758,6 @@ export class PixelArtGenerator {
       ctx.fillRect(-4, -18 + py, 2, 3);
       ctx.fillRect(2, -18 + py, 2, 3);
     }
-
-    // Shield (Left hand)
-    ctx.fillStyle = '#6a401c';
-    ctx.beginPath();
-    ctx.ellipse(-9, -3 + py, 4, 6, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#9e622d';
-    ctx.beginPath();
-    ctx.ellipse(-9, -3 + py, 2.5, 4.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Weapon / Tool in Right Hand (Axe or Sword)
-    if (state === 'swing') {
-      // Animated swing overhead down
-      ctx.save();
-      ctx.translate(6, -8 + py);
-      ctx.rotate((frame * Math.PI) - Math.PI / 3);
-
-      // Handle
-      ctx.fillStyle = '#6d421e';
-      ctx.fillRect(0, -12, 3, 16);
-
-      if (tool === 'axe') {
-        // Steel Axe head
-        ctx.fillStyle = '#b8c2cc';
-        ctx.beginPath();
-        ctx.moveTo(3, -12);
-        ctx.lineTo(12, -16);
-        ctx.lineTo(10, -6);
-        ctx.closePath();
-        ctx.fill();
-      } else {
-        // Sword blade
-        ctx.fillStyle = '#cfd7e0';
-        ctx.fillRect(-1, -20, 5, 14);
-        ctx.fillStyle = '#f1c40f'; // guard
-        ctx.fillRect(-3, -6, 9, 2);
-      }
-      ctx.restore();
-    } else {
-      // Idle / Walking holding weapon
-      ctx.fillStyle = '#6d421e';
-      ctx.fillRect(6, -6 + py, 3, 12);
-      if (tool === 'axe') {
-        ctx.fillStyle = '#b8c2cc';
-        ctx.fillRect(8, -8 + py, 6, 5);
-      } else {
-        ctx.fillStyle = '#cfd7e0';
-        ctx.fillRect(6, -14 + py, 3, 10);
-      }
-    }
-
     ctx.restore();
   }
 
